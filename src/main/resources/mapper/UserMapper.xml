@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xhs.mapper.UserMapper">
+
+    <!-- 实体映射 -->
+    <resultMap id="userResultMap" type="com.xhs.pojo.User">
+        <id column="id" property="id"/>
+        <result column="username" property="username"/>
+        <result column="password" property="password"/>
+        <result column="mobile" property="mobile"/>
+        <result column="email" property="email"/>
+        <result column="avatar" property="avatar"/>
+        <result column="bio" property="bio"/>
+        <result column="created_at" property="createdAt"/>
+    </resultMap>
+
+    <!-- 注册用户 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            username,
+            password,
+            <if test="mobile != null">mobile,</if>
+            <if test="email != null">email,</if>
+            created_at
+        </trim>
+        VALUES
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            #{username},
+            #{password},
+            <if test="mobile != null">#{mobile},</if>
+            <if test="email != null">#{email},</if>
+            NOW()
+        </trim>
+    </insert>
+
+
+    <!-- 检查手机号是否存在 -->
+    <select id="existsByMobile" resultType="int">
+        SELECT COUNT(1) FROM user WHERE mobile = #{mobile}
+    </select>
+
+    <!-- 检查邮箱是否存在 -->
+    <select id="existsByEmail" resultType="int">
+        SELECT COUNT(1) FROM user WHERE email = #{email}
+    </select>
+
+    <!-- 根据手机/邮箱登录查询 -->
+    <select id="findByMobileOrEmail" resultMap="userResultMap">
+        SELECT * FROM user
+        WHERE mobile = #{identifier} OR email = #{identifier}
+            LIMIT 1
+    </select>
+    <select id="selectById" resultMap="userResultMap">
+        SELECT * FROM user WHERE id = #{id}
+    </select>
+
+    <select id="existsById" resultType="java.lang.Boolean">
+             SELECT COUNT(1) FROM user WHERE id = #{id}
+    </select>
+    <select id="existsByUsername" resultType="java.lang.Boolean">
+        SELECT COUNT(1) FROM user WHERE username = #{username}
+    </select>
+
+    <!-- 更新用户基本信息 -->
+    <update id="update">
+        UPDATE user
+        <set>
+            <if test="username != null">username = #{username},</if>
+            <if test="bio != null">bio = #{bio},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 更新头像 -->
+    <update id="updateAvatar">
+        UPDATE user SET avatar = #{avatar} WHERE id = #{userId}
+    </update>
+
+    <!-- 完整更新（备用） -->
+    <update id="fullUpdate">
+        UPDATE user SET
+                        username = #{username},
+                        password = #{password},
+                        mobile = #{mobile},
+                        email = #{email},
+                        avatar = #{avatar},
+                        bio = #{bio}
+        WHERE id = #{id}
+    </update>
+    <!-- 检查关注关系 -->
+    <select id="checkFollowExists" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM follow
+        WHERE user_id = #{userId}
+          AND followed_user_id = #{followedUserId}
+    </select>
+
+    <!-- 添加关注 -->
+    <insert id="insertFollow">
+        INSERT INTO follow(user_id, followed_user_id)
+        VALUES(#{userId}, #{followedUserId})
+    </insert>
+
+    <!-- 取消关注 -->
+    <delete id="deleteFollow">
+        DELETE FROM follow
+        WHERE user_id = #{userId}
+          AND followed_user_id = #{followedUserId}
+    </delete>
+
+
+</mapper>
